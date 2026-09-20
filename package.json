@@ -1,0 +1,9 @@
+{
+  "name": "jev-in-mcp",
+  "version": "0.0.0",
+  "description": "Jev inside an MCP server: browser tools any agent can call, plus jev_run to hand a goal to TypeSafe Jev.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "keywords": ["jev", "typesafe", "mcp", "model-context-protocol", "browser-agent", "browser-automation"]
+}
