@@ -1,10 +1,11 @@
 # jev-in-mcp
 
-Jev lives inside an MCP relay. To the agent it is one MCP server; to the user's MCP servers it is a client. Every tool passes through unchanged, and every server gets one extra tool, `use_jev`, that hands a goal to TypeSafe Jev: Jev picks the tool calls, the calling model supplies any text that has to be written, and the relay executes. Built on [jev-dev-kit](../jev-dev-kit/).
+Jev lives inside an MCP relay. To the agent it is one MCP server; to the user's MCP servers it is a client. Every tool passes through unchanged, every server gets one extra tool, `<server>__use_jev`, and there is one global `use_jev` over all servers; each hands a goal to TypeSafe Jev: Jev picks the tool calls, the calling model supplies any text that has to be written, and the relay executes. Built on [jev-dev-kit](../jev-dev-kit/).
 
 ```
 client (LLM) ──MCP──► jev-in-mcp ──MCP──► github, filesystem, browser, ...
-                          └── <server>__use_jev(goal): Jev runs that server's tools in a loop
+                          ├── <server>__use_jev(goal): Jev runs that server's tools in a loop
+                          └── use_jev(goal): the same over every server (server chosen first, then the tool)
 ```
 
 ## Status

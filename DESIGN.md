@@ -23,6 +23,7 @@ The Jev API key is entered on a local settings page: `npx jev-in-mcp setup` star
 
 - `<server>__<tool>` for every downstream tool, forwarded as is.
 - `<server>__use_jev(goal, max_steps?, pause_after?, session?, input?)` per server.
+- `use_jev(goal, servers?, max_steps?, pause_after?, session?, input?)`: the same over every connected server (or the listed ones). Can be turned off in the config.
 - `jev_status()`: which servers are connected, whether a Jev key is configured, which tools each `use_jev` may use.
 
 ## What `use_jev` does
@@ -37,6 +38,12 @@ Built on jev-dev-kit: `runLoop` with an `App` whose parts are:
 - **encode**: `task`, the server's tool names, the last five calls with arguments and results. The last result is the fingerprint, so "no visible change" and the stuck check work as in the browser.
 
 Returns the loop status, reason, the trace (every step's candidates, probabilities, latency, what was called and what came back) and the final results. `pause_after: N` returns after N steps with a `session` so the model can look and continue.
+
+## The global `use_jev`
+
+One candidate set with every tool of every server would be large, and Jev's tool choice degrades with the size of the set. So the global loop chooses in two stages inside one request: a `server` choice (each server described by what it is for and a summary of its tools), and one `tool` choice per server over that server's tools, plus the parameter choices as before. Only the chosen server's tool answer is used; the other heads are ignored, exactly like the extension's operation head and per-operation target heads. Every level stays small, and the request count per step stays one.
+
+The state adds `server` to each recorded call so the model sees which server did what. Per-server allow/deny lists apply unchanged.
 
 ## Descriptions decide quality
 
