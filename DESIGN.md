@@ -1,46 +1,53 @@
 # Design
 
-## Tools
+Settled on 2026-09-20. Code follows this document; change the document first.
 
-| Tool | What it does | Needs a Jev key |
-|---|---|---|
-| `browser_open(url, session?)` | Opens or reuses a tab, returns the element table | no |
-| `browser_observe(session?)` | Element table, page text, URL, title; the same snapshot the extension shows as badges | no |
-| `browser_click(ref)` / `browser_type(ref, text)` / `browser_select(ref, value)` / `browser_scroll(direction)` / `browser_press_enter()` | One action on an observed element, then a fresh observation | no |
-| `browser_assert(checks)` | Code-checked assertions on URL, title, text, element presence | no |
-| `jev_run(goal, url?, max_steps?, verify?)` | Jev drives the loop until DONE/BLOCKED or the budget; returns status, trace, final observation | yes |
+## What it is
 
-`ref` values are the `e1`, `e2`, ... ids from the observation, identical to the extension's action ids.
+A relay. To the agent's client (Claude Code, Cursor, Claude Desktop, Codex, ...) it is one MCP server. To the user's MCP servers it is an MCP client. Every downstream server's tools pass through unchanged, and every server gets one extra tool, `use_jev`, that hands a goal to TypeSafe Jev. The large model stays in charge: it calls tools itself, or delegates a bounded task to Jev, and it supplies any text Jev cannot choose.
 
-## Backends
-
-One interface, two implementations:
-
-```ts
-interface Backend {
-  open(url: string): Promise<Observation>;
-  observe(): Promise<Observation>;
-  act(action: PageAction, text?: string): Promise<ActResult>;
-}
+```
+client (LLM) ──MCP──► jev-in-mcp ──MCP──► github
+                           │       ──MCP──► filesystem
+                           │       ──MCP──► browser
+                           └── use_jev: runLoop (jev-dev-kit) over one server's tools
 ```
 
-- **Extension backend** (first). The MCP server opens a localhost WebSocket; jev-for-chrome connects to it when "Allow local agents" is enabled in Options. Observe and act are the extension's own `CONTENT_OBSERVE` and trusted-input act path, so the page is driven inside the user's real Chrome with their logins, no remote-debugging flag, no second browser.
-- **Playwright backend** (later). Launches Chromium, injects the same content bundle, dispatches input through CDP. For headless runs, CI and machines without the extension.
+## Installation
 
-## Shared code
+Same as any MCP server: one entry in the client's config that runs `npx jev-in-mcp`. The user's existing `mcpServers` entries move into jev-in-mcp's own config file (`~/.config/jev-in-mcp/config.json`, same format), or `npx jev-in-mcp import` copies them from the client's config.
 
-The decision loop, action space, rules, answer validation and text helper come from jev-for-chrome's `src/shared`. They move into a small package inside the umbrella (`packages/jev-core` or published as `jev-for-chrome/core`) that both the extension and the server import. Nothing is forked.
+The Jev API key is entered on a local settings page: `npx jev-in-mcp setup` starts a temporary page on localhost, the key is saved to the config directory, the page closes. The key never passes through a conversation. (A long-lived local daemon that several clients share is a later option; the stdio process per client is enough to start.)
 
-## Loop
+## Tools the client sees
 
-`jev_run` is the extension's `AgentRunner.executeOneStep` with the backend swapped: observe → build request (task, page, elements, recent actions, visited URLs) → Jev answers operation + target + goal_done + stuck → validate → act → repeat. Same veto rules, same repeat detection, same stale handling. The trace format is the extension's Copy-trace JSON.
+- `<server>__<tool>` for every downstream tool, forwarded as is.
+- `<server>__use_jev(goal, max_steps?, pause_after?, session?, input?)` per server.
+- `jev_status()`: which servers are connected, whether a Jev key is configured, which tools each `use_jev` may use.
 
-## Generic mode (roadmap)
+## What `use_jev` does
 
-Point jev-in-mcp at another MCP server. Its tools become the candidates of a Choice; the "page" is the last tool result plus the goal; arguments come from enum Choices, word highlighting over the goal and previous results (the dispatcher's method), and the text helper as the last resort. Out of scope until the browser mode is solid.
+Built on jev-dev-kit: `runLoop` with an `App` whose parts are:
 
-## Open questions
+- **options**: that server's tools as candidates, described by what they do and what they take; enum and boolean parameters as choice decisions in the same request (named `tool__param`, only the chosen tool's answers used, unusable answers for unchosen tools ignored). Tools with a required parameter Jev cannot express (object, array) are not offered. Per-server allow/deny lists in the config decide which tools Jev may use; destructive tools are denied by default and remain available to the large model directly.
+- **text**: the calling model. Two paths, chosen by what the client supports:
+  1. **sampling** (`sampling/createMessage`): the relay asks the client's model for the value inside the tool call. The request carries the goal, the field (tool, parameter, type, description), and the bounded context (last results). The reply must be `{"text": ...}`; `parseFieldText` from the kit enforces it.
+  2. **needs_input**: the tool call returns `{ status: "needs_input", session, field, context }`; the loop is suspended; the model calls `use_jev` again with `session` and `input`; the loop resumes. Requires suspend/resume in the kit's `runLoop`.
+- **act**: `callTool` on the downstream client; the result becomes bounded text (default 800 chars, `ERROR:` prefix when `isError`).
+- **encode**: `task`, the server's tool names, the last five calls with arguments and results. The last result is the fingerprint, so "no visible change" and the stuck check work as in the browser.
 
-- Whether `jev_run` should return control after every N steps so the large model can look, or only on DONE/BLOCKED/budget (jev-ultrafast-mcp returns only at the end; a `pause_after` parameter would cover both).
-- Session model: one tab per session, sessions named by the client.
-- Later thoughts (2026-09-20, not settled): a gateway that passes the user's MCP servers through and adds one `use_jev` per server; or the reverse, Jev as the caller of an MCP built for it, with a generative model asked for content when a value must be written and scripts supplying the rest. The large model stays the lead; Jev is the supporting role. Design to be finished before any code.
+Returns the loop status, reason, the trace (every step's candidates, probabilities, latency, what was called and what came back) and the final results. `pause_after: N` returns after N steps with a `session` so the model can look and continue.
+
+## Descriptions decide quality
+
+Default candidate sentences come from the tool's description and parameter list. The config may override any tool's sentence with consequence-first wording; that is where a server adapter lives. Nothing else about a server is special-cased.
+
+## Kit changes needed
+
+- `runLoop`: suspend when the text callback signals it needs input from outside, and resume with the value (session kept in memory in the relay process).
+
+Everything else already exists in the kit (candidates, validation, cross-checks, repeat and deadlock detection, fallback, trace).
+
+## Not in scope
+
+A browser backend of its own (the browser is just another downstream server, e.g. jev-for-chrome's future MCP endpoint or Playwright MCP); free-form generation; planning above the loop, which is the client model's job.

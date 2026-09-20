@@ -1,17 +1,14 @@
 # jev-in-mcp
 
-Jev lives inside an MCP server. The server exposes a small set of browser tools that any MCP client (Claude Code, Cursor, Claude Desktop, Codex, ...) can call one at a time, plus one tool, `jev_run`, that hands a whole goal to TypeSafe Jev and runs the same tools in a loop at one decision per step. The large model plans and can step in at any point; Jev does the clicking.
+Jev lives inside an MCP relay. To the agent it is one MCP server; to the user's MCP servers it is a client. Every tool passes through unchanged, and every server gets one extra tool, `use_jev`, that hands a goal to TypeSafe Jev: Jev picks the tool calls, the calling model supplies any text that has to be written, and the relay executes. Built on [jev-dev-kit](../jev-dev-kit/).
 
-Same session, two drivers:
-
-```
 agent ──► observe / click / type / select / scroll / navigate ──► page
 agent ──► jev_run(goal) ──► Jev decides each step ──► same tools ──► page
 ```
 
 ## Status
 
-Design stage. Nothing runnable yet. See [DESIGN.md](DESIGN.md).
+Design settled (see [DESIGN.md](DESIGN.md)); implementation next.
 
 ## Relation to other projects
 
@@ -21,9 +18,9 @@ Design stage. Nothing runnable yet. See [DESIGN.md](DESIGN.md).
 
 ## Roadmap
 
-1. Browser tools + `jev_run` with the extension as the backend.
-2. Playwright backend for headless and CI use, same tools.
-3. Generic mode: proxy another MCP server's tools and let Jev run multi-step loops over them.
+1. Relay with pass-through tools, per-server `use_jev` with the needs_input path, setup page for the key.
+2. Sampling path where the client supports it; config import from clients.
+3. Per-tool description overrides and a small eval set per common server.
 
 ## License
 
