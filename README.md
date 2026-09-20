@@ -50,7 +50,7 @@ Tools with a required parameter Jev cannot express (objects, arrays) are not off
 
 ## Status
 
-0.1.0. Needs real-world runs against common servers before it is recommended; the loop and the relay are covered by tests, the sampling path is not exercised by any client yet.
+0.1.1. Verified live against the reference filesystem server with real Jev and DeepSeek as the calling model, in both the needs_input and the sampling path: 6/6 tasks, one Jev decision each, 4 to 10 seconds per task including the model writing values. Details in [docs/live-run-2026-09-20.md](docs/live-run-2026-09-20.md). Other servers have not been tried yet.
 
 ## Relation to other projects
 

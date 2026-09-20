@@ -41,6 +41,10 @@ interface Session {
   createdAt: number;
 }
 
+/** What the calling model is told when the relay asks it for a value. */
+export const WRITER_PROMPT =
+  'You supply one value for a tool parameter of an MCP server, on behalf of an agent working toward the goal. Return a JSON object with exactly one key, text: the exact value to pass. If the goal states the value, use it verbatim. If the goal describes what the value should contain (a note to write, a list to compose, a query to run), compose it to fit the goal, the field description and the context. Paths must be complete and inside the directories named in the goal or seen in the context. Return {"text": null} only when the goal and context give no basis for any value. No explanations.';
+
 const SAFE = /[^A-Za-z0-9_-]/g;
 const MAX_NAME = 64;
 
@@ -140,7 +144,7 @@ export function createRelay(opts: RelayOptions): { server: Server; sessions: Map
     return async (ctx: TextContext) => {
       const reply = await server.createMessage({
         messages: [{ role: 'user', content: { type: 'text', text: JSON.stringify(ctx) } }],
-        systemPrompt: 'Return a JSON object with exactly one key, text: the exact value for the field described, using only the goal and the context. If the goal gives no value for it, return {"text": null}. No explanations.',
+        systemPrompt: WRITER_PROMPT,
         maxTokens: 512,
       });
       const content = reply.content as { type: string; text?: string };

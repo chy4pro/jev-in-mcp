@@ -34,6 +34,7 @@ Built on jev-dev-kit: `runLoop` with an `App` whose parts are:
 - **text**: the calling model. Two paths, chosen by what the client supports:
   1. **sampling** (`sampling/createMessage`): the relay asks the client's model for the value inside the tool call. The request carries the goal, the field (tool, parameter, type, description), and the bounded context (last results). The reply must be `{"text": ...}`; `parseFieldText` from the kit enforces it.
   2. **needs_input**: the tool call returns `{ status: "needs_input", session, field, context }`; the loop is suspended; the model calls `use_jev` again with `session` and `input`; the loop resumes. Requires suspend/resume in the kit's `runLoop`.
+  Only required text parameters are asked for; optional ones take their defaults (each request is a round trip to the model). The prompt tells the model to use a value the goal states verbatim and to compose one the goal describes, returning null only when there is no basis at all.
 - **act**: `callTool` on the downstream client; the result becomes bounded text (default 800 chars, `ERROR:` prefix when `isError`).
 - **encode**: `task`, the server's tool names, the last five calls with arguments and results. The last result is the fingerprint, so "no visible change" and the stuck check work as in the browser.
 

@@ -7,7 +7,7 @@ import { defaultModel, makeJevClient } from './jev.js';
 import { createRelay } from './relay.js';
 import { runSetup } from './setup.js';
 
-const VERSION = '0.1.0';
+const VERSION = '0.1.1';
 
 async function serve(): Promise<void> {
   const config = loadConfig();

@@ -35,7 +35,9 @@ describe('tools in Jev form', () => {
 
   it('resolves arguments from answers, the text callback and defaults; refuses bad numbers and missing required values', async () => {
     const text = vi.fn(async (ctx: any) => (ctx.field.parameter === 'title' ? 'Blinding Lights' : ctx.field.parameter === 'volume' ? '67' : 'x'));
-    expect(await resolveArguments(tools[3], chosen('play_song', { play_song__shuffle: { choice: 'true', confidence: 1, probabilities: { true: 1 } } }), text, { goal: 'g' })).toEqual({ title: 'Blinding Lights', artist: 'x', device: 'speaker', shuffle: true });
+    // artist is optional text: not asked for, left out; device takes its default
+    expect(await resolveArguments(tools[3], chosen('play_song', { play_song__shuffle: { choice: 'true', confidence: 1, probabilities: { true: 1 } } }), text, { goal: 'g' })).toEqual({ title: 'Blinding Lights', device: 'speaker', shuffle: true });
+    expect(text.mock.calls.map((c: any) => c[0].field.parameter)).toEqual(['title']);
     expect(await resolveArguments(tools[1], chosen('set_volume'), text, { goal: 'g' })).toEqual({ volume: 67 });
     await expect(resolveArguments(tools[1], chosen('set_volume'), async () => 'loud', { goal: 'g' })).rejects.toThrow(/must be an integer/);
     await expect(resolveArguments(tools[2], chosen('set_repeat_mode'), text, { goal: 'g' })).rejects.toThrow(/needs "mode"/);

@@ -122,10 +122,10 @@ export async function resolveArguments(
       const a = chosen.answers[(ctx.prefix || '') + paramDecision(tool.name, p.name)] as JevChoiceAnswer | undefined;
       if (a) value = p.kind === 'boolean' ? a.choice === 'true' : a.choice;
     } else {
-      if (!text) {
-        if (p.required) throw new Error(`"${tool.name}" needs "${p.name}" but nothing can supply text.`);
-        continue;
-      }
+      // Only required text values are asked for; optional ones take their default. Asking the
+      // calling model for every optional parameter costs a round trip each and rarely helps.
+      if (!p.required) continue;
+      if (!text) throw new Error(`"${tool.name}" needs "${p.name}" but nothing can supply text.`);
       let raw: string;
       try {
         raw = await text({

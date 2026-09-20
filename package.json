@@ -1,6 +1,6 @@
 {
   "name": "jev-in-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP relay that adds use_jev to every server: Jev picks the tool calls, the calling model writes the values Jev cannot choose, the relay executes.",
   "license": "MIT",
   "type": "module",
@@ -42,11 +42,13 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "jev-dev-kit": "github:chy4pro/jev-dev-kit#v0.3.1",
+    "jev-dev-kit": "github:chy4pro/jev-dev-kit#v0.3.2",
     "zod": "^3.25.0"
   },
   "devDependencies": {
+    "@modelcontextprotocol/server-filesystem": "^2026.8.31",
     "@types/node": "^24.0.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^5.0.1"
   }
