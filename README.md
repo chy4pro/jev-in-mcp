@@ -24,6 +24,7 @@ Design settled (see [DESIGN.md](DESIGN.md)); implementation next.
 1. Relay with pass-through tools, per-server `use_jev` with the needs_input path, setup page for the key.
 2. Sampling path where the client supports it; config import from clients.
 3. Per-tool description overrides and a small eval set per common server.
+4. Options supplied by the model: the calling model writes a few fixed programs (scripts, recipes) and registers them as candidates, so Jev chooses among them and the relay runs them. Not designed yet; the open questions are where such programs live, how they are described to Jev, and how they are kept safe.
 
 ## License
 

@@ -55,6 +55,10 @@ Default candidate sentences come from the tool's description and parameter list.
 
 Everything else already exists in the kit (candidates, validation, cross-checks, repeat and deadlock detection, fallback, trace).
 
+## Later: options written by the model (not designed)
+
+Today the candidates are the servers' tools. A later version lets the calling model add candidates of its own: a few fixed programs it writes for the task at hand (a script that filters a list, a recipe that chains three tool calls), registered with a description, run by the relay when Jev picks them. This is the kit's `options` callback with a model behind it. Open questions before any design: where the programs are stored and for how long, what sandbox they run in, how their descriptions are kept consequence-first, and whether Jev may pick them alongside raw tools or only in a separate head.
+
 ## Not in scope
 
 A browser backend of its own (the browser is just another downstream server, e.g. jev-for-chrome's future MCP endpoint or Playwright MCP); free-form generation; planning above the loop, which is the client model's job.
