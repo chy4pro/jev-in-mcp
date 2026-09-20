@@ -1,9 +1,53 @@
 {
   "name": "jev-in-mcp",
-  "version": "0.0.0",
-  "description": "Jev inside an MCP server: browser tools any agent can call, plus jev_run to hand a goal to TypeSafe Jev.",
+  "version": "0.1.0",
+  "description": "MCP relay that adds use_jev to every server: Jev picks the tool calls, the calling model writes the values Jev cannot choose, the relay executes.",
   "license": "MIT",
-  "private": true,
   "type": "module",
-  "keywords": ["jev", "typesafe", "mcp", "model-context-protocol", "browser-agent", "browser-automation"]
+  "bin": {
+    "jev-in-mcp": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "DESIGN.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test && npm run build",
+    "prepare": "npm run build",
+    "start": "node dist/cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chy4pro/jev-in-mcp.git"
+  },
+  "keywords": [
+    "jev",
+    "typesafe",
+    "mcp",
+    "model-context-protocol",
+    "mcp-proxy",
+    "mcp-gateway",
+    "decision-model",
+    "agent"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "jev-dev-kit": "github:chy4pro/jev-dev-kit#v0.3.1",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.1"
+  }
 }

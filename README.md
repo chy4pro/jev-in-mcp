@@ -8,9 +8,49 @@ client (LLM) ──MCP──► jev-in-mcp ──MCP──► github, filesystem
                           └── use_jev(goal): the same over every server (server chosen first, then the tool)
 ```
 
+## Install
+
+Node 20+. Three commands, then restart your MCP client.
+
+```bash
+npx jev-in-mcp setup     # a local page to store the Jev API key (OpenRouter or TypeSafe); nothing goes through a chat
+npx jev-in-mcp import    # copies the mcpServers entries of Claude Code, Cursor, Windsurf and Claude Desktop into jev-in-mcp's config
+npx jev-in-mcp status    # what is configured, which servers connect, how many tools each has
+```
+
+Then replace the servers in your client's config with one entry:
+
+```json
+{ "mcpServers": { "jev": { "command": "npx", "args": ["-y", "jev-in-mcp"] } } }
+```
+
+Config lives in `~/.config/jev-in-mcp/config.json` (or `$JEV_IN_MCP_HOME`); the key in `credentials.json` next to it (mode 600), or in `JEV_API_KEY`. Not on npm yet: install from GitHub with `npm install -g github:chy4pro/jev-in-mcp` and use `jev-in-mcp` in place of `npx jev-in-mcp`.
+
+```json
+{
+  "servers": {
+    "github": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-github"], "env": { "GITHUB_TOKEN": "..." },
+                "purpose": "Issues, pull requests and files on GitHub",
+                "jev": { "deny": ["delete_repository"], "describe": { "create_issue": "Opens a new issue with the given title and body; returns its number." } } },
+    "notes":  { "url": "http://localhost:8080/mcp" }
+  },
+  "jev": { "provider": "openrouter", "model": "typesafe/jev-1.13" },
+  "use_jev": { "global": true, "max_steps": 20, "result_chars": 800 }
+}
+```
+
+## What the client sees
+
+- `<server>__<tool>`: every downstream tool, passed through unchanged.
+- `<server>__use_jev(goal, max_steps?, pause_after?, session?, input?)`: Jev runs that server's tools toward the goal, one decision per step (~300 ms), and returns the status, the trace and every call made. When a value must be written rather than chosen (a search query, a note's text), the call returns `status: "needs_input"` with the field and a `session`; the model calls the same tool again with `session` and `input` and the run continues. Where the client supports MCP sampling, the relay asks the model inside the call instead and nothing is interrupted.
+- `use_jev(goal, servers?, ...)`: the same over every server. Jev picks the server first, then the tool, in one request.
+- `jev_status()`: servers, key status, and which tools each `use_jev` may use.
+
+Tools with a required parameter Jev cannot express (objects, arrays) are not offered to Jev; `deny` keeps destructive tools away from it; `describe` replaces a tool's sentence with what actually happens when it is called, which is where the quality of a server's `use_jev` is decided.
+
 ## Status
 
-Design settled (see [DESIGN.md](DESIGN.md)); implementation next.
+0.1.0. Needs real-world runs against common servers before it is recommended; the loop and the relay are covered by tests, the sampling path is not exercised by any client yet.
 
 ## Relation to other projects
 
