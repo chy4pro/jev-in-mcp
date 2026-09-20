@@ -2,8 +2,9 @@
 
 Jev lives inside an MCP relay. To the agent it is one MCP server; to the user's MCP servers it is a client. Every tool passes through unchanged, and every server gets one extra tool, `use_jev`, that hands a goal to TypeSafe Jev: Jev picks the tool calls, the calling model supplies any text that has to be written, and the relay executes. Built on [jev-dev-kit](../jev-dev-kit/).
 
-agent ──► observe / click / type / select / scroll / navigate ──► page
-agent ──► jev_run(goal) ──► Jev decides each step ──► same tools ──► page
+```
+client (LLM) ──MCP──► jev-in-mcp ──MCP──► github, filesystem, browser, ...
+                          └── <server>__use_jev(goal): Jev runs that server's tools in a loop
 ```
 
 ## Status
@@ -12,9 +13,10 @@ Design settled (see [DESIGN.md](DESIGN.md)); implementation next.
 
 ## Relation to other projects
 
-- [jev-for-chrome](../jev-for-chrome/): the Chrome extension. jev-in-mcp reuses its observation format, action space, rules and text helper, and can use the extension as its browser backend (your real Chrome, your logins).
-- [jiawei686/jev-ultrafast-mcp](https://github.com/jiawei686/jev-ultrafast-mcp): the same idea in Python, driving a Chrome started with a remote-debugging port. jev-in-mcp differs by running inside the user's normal Chrome through the extension, by being an npm package (`npx jev-in-mcp`), and by sharing one executor with the extension.
-- [abhishekashokvkumar/jev-mcp-dispatcher](https://github.com/abhishekashokvkumar/jev-mcp-dispatcher): Jev picking a tool and its arguments from one sentence, for any simple MCP server. The generic direction on the roadmap below builds on that idea.
+- [jev-dev-kit](../jev-dev-kit/): the framework this is built on. `use_jev` is its `runLoop`; the relay supplies candidates (tools), text (the calling model) and actions (tool calls).
+- [jev-for-chrome](../jev-for-chrome/): the Chrome extension; a browser becomes one more downstream server once it exposes an MCP endpoint.
+- [jiawei686/jev-ultrafast-mcp](https://github.com/jiawei686/jev-ultrafast-mcp): Jev driving a browser behind one MCP tool. jev-in-mcp is not browser-specific: any MCP server gets a `use_jev`.
+- [abhishekashokvkumar/jev-mcp-dispatcher](https://github.com/abhishekashokvkumar/jev-mcp-dispatcher): Jev picking one tool call from one sentence. jev-in-mcp runs multi-step loops and lets the calling model write the values Jev cannot choose.
 
 ## Roadmap
 
