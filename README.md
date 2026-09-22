@@ -50,7 +50,7 @@ Tools with a required parameter Jev cannot express (objects, arrays) are not off
 
 ## Status
 
-0.1.1. Verified live against the reference filesystem server with real Jev and DeepSeek as the calling model, in both the needs_input and the sampling path: 6/6 tasks, one Jev decision each, 4 to 10 seconds per task including the model writing values. Details in [docs/live-run-2026-09-20.md](docs/live-run-2026-09-20.md). Other servers have not been tried yet.
+0.1.1. Verified live against the reference filesystem server with real Jev and DeepSeek as the calling model, in both the needs_input and the sampling path: 6/6 tasks, one Jev decision each, 4 to 10 seconds per task including the model writing values. Details in [docs/live-run-2026-09-20.md](docs/live-run-2026-09-20.md); the same 6/6 through Vercel AI Gateway in [docs/live-run-2026-09-22-vercel.md](docs/live-run-2026-09-22-vercel.md). Other servers have not been tried yet.
 
 ## Relation to other projects
 

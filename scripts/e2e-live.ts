@@ -13,18 +13,24 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-const KEY = (process.env.OPENROUTER_API_KEY || '').trim();
-if (!KEY) { console.error('OPENROUTER_API_KEY missing'); process.exit(2); }
+const KEY = (process.env.JEV_API_KEY || process.env.OPENROUTER_API_KEY || '').trim();
+if (!KEY) { console.error('JEV_API_KEY (or OPENROUTER_API_KEY) missing'); process.exit(2); }
+const WRITER_API_KEY = (process.env.WRITER_API_KEY || process.env.OPENROUTER_API_KEY || '').trim();
+if (!WRITER_API_KEY) { console.error('WRITER_API_KEY (or OPENROUTER_API_KEY) missing'); process.exit(2); }
 const WRITER_MODEL = process.env.WRITER_MODEL || 'deepseek/deepseek-chat';
+const WRITER_BASE_URL = process.env.WRITER_BASE_URL || 'https://openrouter.ai/api/v1';
+const JEV_PROVIDER = (process.env.JEV_PROVIDER || 'openrouter') as 'openrouter' | 'typesafe';
+const JEV_MODEL = process.env.JEV_MODEL || 'typesafe/jev-1.13';
+const JEV_ENDPOINT = process.env.JEV_ENDPOINT;
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const modes = (process.argv[2] || 'both') === 'both' ? ['needs_input', 'sampling'] : [process.argv[2]];
 
 import { WRITER_PROMPT } from '../src/relay.js';
 
 async function writer(payload: unknown): Promise<string> {
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+  const res = await fetch(`${WRITER_BASE_URL.replace(/\/$/, '')}/chat/completions`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json', 'HTTP-Referer': 'https://github.com/chy4pro/jev-in-mcp', 'X-Title': 'jev-in-mcp live test' },
+    headers: { Authorization: `Bearer ${WRITER_API_KEY}`, 'Content-Type': 'application/json', 'HTTP-Referer': 'https://github.com/chy4pro/jev-in-mcp', 'X-Title': 'jev-in-mcp live test' },
     body: JSON.stringify({ model: WRITER_MODEL, max_tokens: 400, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: WRITER_PROMPT }, { role: 'user', content: JSON.stringify(payload) }] }),
   });
   if (!res.ok) throw new Error(`writer HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
@@ -66,7 +72,7 @@ async function run(mode: string) {
     const dir = seed();
     fs.writeFileSync(path.join(home, 'config.json'), JSON.stringify({
       servers: { filesystem: { command: process.execPath, args: [path.join(root, 'node_modules', '@modelcontextprotocol', 'server-filesystem', 'dist', 'index.js'), dir], purpose: 'Files in the working directory' } },
-      jev: { provider: 'openrouter', model: 'typesafe/jev-1.13' },
+      jev: { provider: JEV_PROVIDER, model: JEV_MODEL, ...(JEV_ENDPOINT ? { endpoint: JEV_ENDPOINT } : {}) },
       use_jev: { global: true, max_steps: 8, result_chars: 600 },
     }));
     const client = new Client({ name: 'live-test', version: '1' }, mode === 'sampling' ? { capabilities: { sampling: {} } } : {});
